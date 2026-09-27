@@ -1,4 +1,4 @@
-冷蔵庫の食材管理(Web版 v2 / MySQL / HTML・CSS・JS)
+#冷蔵庫の食材管理(Web版 v2 / MySQL / HTML・CSS・JS)
 
 ブラウザで使う食材管理アプリです。
 •サーバー側: Java(JDK標準のWebサーバー) + MySQL(スキーマ i2c の food テーブル)
