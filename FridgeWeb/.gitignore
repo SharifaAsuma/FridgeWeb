@@ -1,0 +1,18 @@
+# Maven のビルド成果物(mvn package で作られる target フォルダ)。再生成できるので管理不要
+target/
+
+# Eclipse固有の設定ファイル。人によって内容が変わるため管理しない
+.settings/
+.classpath
+.project
+
+# 本物の設定ファイル(MySQLのパスワードなど、実際の接続情報が入っている)。
+# 代わりに config.properties.example をGitに載せている
+config.properties
+
+# SQLiteで試したときにできるファイル
+*.db
+
+# OS・エディタが自動で作る不要ファイル
+.DS_Store
+/bin/
