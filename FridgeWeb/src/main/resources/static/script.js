@@ -385,7 +385,7 @@ async function disposeItem(item) {
   await reloadList();
 }
 
-/** 「使い切みを取消」ボタン: 使い切った状態を取り消し、一覧に戻す */
+/** 「使い切りを取消」ボタン: 使い切った状態を取り消し、一覧に戻す */
 async function restoreItem(item) {
   await fetch(`/api/items/${item.id}/restore`, { method: "POST" });
   showToast(`「${item.name}」を一覧に戻しました`);

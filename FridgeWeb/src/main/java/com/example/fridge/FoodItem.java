@@ -44,7 +44,7 @@ public class FoodItem {
         return ChronoUnit.DAYS.between(LocalDate.now(), expiryDate);
     }
 
-    /** 使い切み(使い切った日が入っている)かどうか */
+    /** 使い切った(使い切った日が入っている)かどうか */
     public boolean isDisposed() {
         return disposalDate != null;
     }
