@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
  * データのやり取りは /api/... のJSON APIで行う(ブラウザ側の script.js が fetch() で呼び出す)。
  *
  * APIの一覧:
- * GET /api/items 一覧取得 (?category=肉類 で絞り込み、?includeDisposed=true で使い切み含む)
+ * GET /api/items 一覧取得 (?category=肉類 で絞り込み、?includeDisposed=true で使い切り含む)
  * GET /api/items/{id} 1件取得
  * POST /api/items 追加
  * PUT /api/items/{id} 更新
