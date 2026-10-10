@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--
+  冷蔵庫の食材管理・画面本体(HTML)。
+  中身のデータはここには書かず、script.js が /api/items から取得して
+  JavaScriptで一覧やフォームを作る(見た目は style.css、動きは script.js に分けている)。
+-->
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>冷蔵庫の食材管理</title>
+
+  <!-- 見出し用の少しクセのあるセリフ体(Fraunces)と、本文・数値用の読みやすいゴシック体(Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ヘッダー: アプリ名だけのシンプルな帯。ロゴは絵文字ではなく線画のSVGにしている -->
+  <header class="app-header">
+    <div class="wrap header-inner">
+      <svg class="logo-mark" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="4" y="2" width="16" height="20" rx="2.5" stroke="currentColor" stroke-width="1.6"/>
+        <line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="1.6"/>
+        <line x1="7" y1="5.2" x2="7" y2="6.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        <line x1="7" y1="12" x2="7" y2="13.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+      <span class="app-title">冷蔵庫の食材管理</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- 操作したあとの結果メッセージ(「追加しました」など)を出す場所。普段は非表示 -->
+    <div id="toast" class="toast" role="status" hidden></div>
+
+    <!-- 件数のまとめ(全件・期限切れ・期限間近)。中の数字だけ script.js が書き換える -->
+    <div class="stat-row" aria-label="在庫のまとめ">
+      <div class="stat-ticket stat-total">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 9h16l-1.4 9.2a2 2 0 0 1-2 1.8H7.4a2 2 0 0 1-2-1.8L4 9Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8 9V6a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="1.6"/></svg>
+        <div><strong id="statTotal">0</strong><span>件 保存中</span></div>
+      </div>
+      <div class="stat-ticket stat-soon">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 7v5.5l3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/></svg>
+        <div><strong id="statSoon">0</strong><span>件 まもなく期限</span></div>
+      </div>
+      <div class="stat-ticket stat-expired">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 4 21 20H3L12 4Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 10v4M12 17.2v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <div><strong id="statExpired">0</strong><span>件 期限切れ</span></div>
+      </div>
+    </div>
+
+    <!-- ジャンルの絞り込み・検索・使い切み表示・追加ボタン -->
+    <div class="toolbar">
+      <div class="toolbar-controls">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><line x1="16.2" y1="16.2" x2="21" y2="21" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <input type="search" id="searchBox" placeholder="食材名・店舗・備考で検索">
+        </div>
+        <select id="categoryFilter" aria-label="ジャンルで絞り込み">
+          <option value="">すべてのジャンル</option>
+          <!-- ジャンルの選択肢は script.js が /api/meta から取得して追加する -->
+        </select>
+        <label class="checkbox">
+          <input type="checkbox" id="includeDisposed">
+          使い切った食材も表示
+        </label>
+      </div>
+      <button id="openAddButton" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        食材を追加
+      </button>
+    </div>
+
+    <!-- 一覧表(中身の行は script.js が組み立てる)。列見出しをクリックすると並び替えできる -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th data-sort="name" tabindex="0" role="button">食材名</th>
+            <th data-sort="category" tabindex="0" role="button">ジャンル</th>
+            <th data-sort="expiry" tabindex="0" role="button" aria-sort="ascending">賞味期限</th>
+            <th>残り</th>
+            <th data-sort="purchase" tabindex="0" role="button">購入日</th>
+            <th data-sort="price" tabindex="0" role="button">値段</th>
+            <th>購入店舗</th>
+            <th>備考</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="itemsBody">
+          <!-- ここに1食材ごとの <tr> が追加される -->
+        </tbody>
+      </table>
+      <!-- 何も無いときの案内(単なる空表示ではなく、次にすることを示す) -->
+      <div id="emptyMessage" class="empty" hidden>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2.5" stroke="currentColor" stroke-width="1.4"/><line x1="4" y1="9" x2="20" y2="9" stroke="currentColor" stroke-width="1.4"/></svg>
+        <p>まだ何も登録されていません</p>
+        <button class="btn sub" id="emptyAddButton">最初の食材を追加する</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- 追加・編集フォーム(モーダル)。普段は非表示にしておき、ボタンを押したときだけ表示する -->
+  <div id="formOverlay" class="overlay" hidden>
+    <form id="itemForm" class="card form" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+      <div class="form-head">
+        <h2 id="formTitle">食材を追加</h2>
+        <button type="button" id="closeXButton" class="icon-btn" aria-label="閉じる">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><line x1="5" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="formErrors" class="error" hidden></div>
+
+      <input type="hidden" id="itemId">
+
+      <label class="field"><span>食材名 *</span>
+        <input type="text" id="fieldName" maxlength="100" required>
+      </label>
+
+      <div class="field-row">
+        <label class="field"><span>ジャンル *</span>
+          <select id="fieldCategory">
+            <!-- script.js が /api/meta から取得して追加する -->
+          </select>
+        </label>
+        <label class="field"><span>値段(円)</span>
+          <input type="number" id="fieldPrice" min="0" step="1" inputmode="numeric">
+        </label>
+      </div>
+
+      <div class="field-row">
+        <label class="field"><span>賞味期限 *</span>
+          <input type="date" id="fieldExpiry" required>
+        </label>
+        <label class="field"><span>購入日 *</span>
+          <input type="date" id="fieldPurchase" required>
+        </label>
+      </div>
+
+      <label class="field"><span>購入店舗</span>
+        <input type="text" id="fieldStore" maxlength="100" list="storeOptions">
+        <datalist id="storeOptions"></datalist>
+      </label>
+
+      <label class="field"><span>備考</span>
+        <textarea id="fieldNote" rows="3" maxlength="500"></textarea>
+      </label>
+
+      <div class="actions">
+        <button type="submit" class="btn btn-primary">保存</button>
+        <button type="button" id="cancelButton" class="btn sub">キャンセル</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- 動きの本体はすべて script.js に書いている -->
+  <script src="script.js"></script>
+</body>
+</html>
