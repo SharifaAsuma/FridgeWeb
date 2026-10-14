@@ -66,7 +66,21 @@ public class ApiServer {
   // リクエストの振り分け
   // =====================================================================
 
+  /**
+   * SQLExceptionが「クライアント(入力データ)側の問題」によるものかを判定する。
+   * SQLStateの先頭2桁が
+   * 22 = データの値そのものがおかしい(文字数オーバーなど)
+   * 23 = 整合性制約違反(重複データなど)
+   * のどちらかなら、入力データが原因とみなして 400 を返す。
+   * それ以外(DB接続断・SQL構文エラーなど)は、こちらの不具合として 500 のままにする。
+   */
+  private boolean isClientDataError(SQLException e) {
+    String state = e.getSQLState();
+    return state != null && (state.startsWith("22") || state.startsWith("23"));
+  }
+
   private void handle(HttpExchange ex) throws IOException {
+
     try {
       String path = ex.getRequestURI().getPath();
       String method = ex.getRequestMethod();
@@ -84,12 +98,19 @@ public class ApiServer {
       } else {
         serveStatic(ex, path); // それ以外は静的ファイル(HTML/CSS/JS)を返す
       }
+
+      // 500系も400系のエラーも拾えるよう修正
     } catch (SQLException e) {
       e.printStackTrace();
-      sendJson(ex, 500, "{\"error\":" + Json.str("DBエラー: " + e.getMessage()) + "}");
+      int status = isClientDataError(e) ? 400 : 500;
+      String label = (status == 400) ? "入力内容に問題があります: " : "DBエラー: ";
+      sendJson(ex, status, "{\"error\":" + Json.str(label + e.getMessage()) + "}");
+      // sendJson(ex, 500, "{\"error\":" + Json.str("DBエラー: " + e.getMessage()) + "}");
+
     } catch (Exception e) {
       e.printStackTrace();
       sendJson(ex, 500, "{\"error\":" + Json.str("エラー: " + e.getMessage()) + "}");
+
     } finally {
       ex.close();
     }
@@ -98,11 +119,14 @@ public class ApiServer {
   /** /api/items/{id} 、/api/items/{id}/dispose 、/api/items/{id}/restore の振り分け */
   private void handleItemPath(HttpExchange ex, String path, String method)
       throws IOException, SQLException {
+
     Matcher m = ITEM_PATH.matcher(path);
+
     if (!m.matches()) {
       sendJson(ex, 404, "{\"error\":" + Json.str("APIが見つかりません") + "}");
       return;
     }
+
     int id = Integer.parseInt(m.group(1));
     String action = m.group(2); // "dispose" / "restore" / null
 
@@ -215,8 +239,11 @@ public class ApiServer {
       b.append(Json.str(cfg.categories.get(i)));
     }
     b.append("],\"stores\":[");
-    // あらかじめ決めたリスト(config.properties の store.presets)を先に、
-    // 実際にDBで使われている店名のうち、まだ無いものを後ろに足す(重複は除く)
+
+    /**
+     * あらかじめ決めたリスト(config.properties の store.presets)を先に、
+     * 実際にDBで使われている店名のうち、まだ無いものを後ろに足す(重複は除く)
+     */
     List<String> stores = new java.util.ArrayList<>(cfg.storePresets);
     for (String s : repo.distinctStores()) {
       if (!stores.contains(s)) {
