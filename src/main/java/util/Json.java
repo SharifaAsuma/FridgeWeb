@@ -1,4 +1,4 @@
-package com.example.fridge;
+package util;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

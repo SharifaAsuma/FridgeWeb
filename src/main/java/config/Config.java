@@ -1,4 +1,4 @@
-package com.example.fridge;
+package config;
 
 import java.io.IOException;
 import java.io.Reader;

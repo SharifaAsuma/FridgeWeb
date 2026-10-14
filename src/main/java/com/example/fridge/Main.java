@@ -5,6 +5,10 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import config.Config;
+import controller.ApiServer;
+import dao.JdbcFoodRepository;
+import util.StaticFiles;
 
 /**
  * アプリの起動クラス。
@@ -17,11 +21,15 @@ import java.sql.SQLException;
 public class Main {
 
   public static void main(String[] args) {
-    // 設定ファイルは、実行したフォルダの config.properties(引数で別の場所も指定可能)
+
+    /** 設定ファイルは、実行したフォルダの config.properties(引数で別の場所も指定可能) */
     Path configPath = Paths.get(args.length > 0 ? args[0] : "config.properties");
-    // 画面のファイル(index.html など)の場所。実行フォルダ直下の static を優先し、
-    // 無ければ jar に同梱されているものを一時フォルダに展開して使う。
-    Path staticDir = Paths.get("src/main/resources/static");
+
+    /**
+     * 画面のファイル(index.html など)の場所。実行フォルダ直下の static を優先し、
+     * 無ければ jar に同梱されているものを一時フォルダに展開して使う。
+     */
+    Path staticDir = Paths.get("src/main/resources/webapp");
 
     try {
       // 1. 設定の読み込み

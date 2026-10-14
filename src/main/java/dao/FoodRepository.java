@@ -1,7 +1,8 @@
-package com.example.fridge;
+package dao;
 
 import java.sql.SQLException;
 import java.util.List;
+import dto.FoodItem;
 
 /**
  * 食材データの保存・取得の窓口(インターフェース)。

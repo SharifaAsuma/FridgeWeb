@@ -1,4 +1,4 @@
-package com.example.fridge;
+package dao;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -11,8 +11,9 @@ import java.sql.Types;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
+import config.Config;
+import dto.FoodItem;
 
 /**
  * JDBC を使って、実際にデータベースへ読み書きするクラス。
